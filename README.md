@@ -1,3 +1,57 @@
+# TechTalk — Voice-First Assistant (Vapi + Composio MCP)
+
+My project was built entirely in and deployed on Vapi with MCP from Composio. There is no repo to deliver, but here is a rundown of what was built and how to recreate it. Thank you!
+---
+
+## Table of Contents
+
+* [Overview](#overview)
+* [Architecture](#architecture)
+* [System Prompt (paste into Vapi)](#system-prompt-paste-into-vapi)
+* [Capabilities & Tooling](#capabilities--tooling)
+* [Setup (No-Code or Low-Code)](#setup-no-code-or-low-code)
+* [Golden-Path Demo Scripts](#golden-path-demo-scripts)
+* [Operational Rules & Guardrails](#operational-rules--guardrails)
+* [Tool Call Recipes](#tool-call-recipes)
+* [Troubleshooting](#troubleshooting)
+* [Accessibility & UX Details](#accessibility--ux-details)
+* [Roadmap (Post-Hackathon)](#roadmap-post-hackathon)
+* [Credits](#credits)
+
+---
+
+## Overview
+
+**TechTalk** is a **phone-first assistant** for anyone who struggles with technology (e.g., elderly users). It runs as a **Vapi** voice agent and uses **Composio MCP** tools to act inside the caller’s accounts (Gmail, Google Calendar, Google Drive, and optional Maps/Places). The assistant **explains what it will do, asks for permission, performs the action, and reads back the result**—all in plain, patient language.
+
+**Key benefits**
+
+* **No apps, no screens:** Everything happens over a simple phone call.
+* **Built-in safety:** Clear **say-back confirmations** before any send/create action.
+* **Daily-life utility:** Email triage, quick replies, calendar adds, file lookups, and “text me the details” workflows.
+
+---
+
+## Architecture
+
+**Channel:** Phone call via **Vapi** (STT/TTS, call handling).
+**Brain:** LLM with a **single, detailed system prompt** (below).
+**Actions:** **Composio MCP** tools connected to the caller’s accounts.
+**Data flow (simplified):**
+
+1. Caller speaks → Vapi transcribes.
+2. TechTalk interprets the intent and **selects the minimal tool**.
+3. TechTalk **confirms** the action (recipient, content, date/time, file).
+4. Tool executes (search/read/send/create).
+5. TechTalk reads back a **clear result**, offers next steps.
+
+---
+
+## System Prompt (paste into Vapi)
+
+> Copy everything in this block into your **Vapi Assistant → System Prompt** field.
+
+```
 # Rounded Tech Assistant Agent — **System Prompt**
 
 ## Identity & Purpose
@@ -234,3 +288,109 @@ REMEMBER
 ---
 
 **End of System Prompt**
+```
+
+---
+
+## Capabilities & Tooling
+
+* **Vapi**: phone number, real-time STT/TTS, call events.
+* **Composio MCP tools** (connected to the caller’s accounts):
+
+  * **Gmail** — search/read, draft/reply, forward with attachment
+  * **Google Calendar** — agenda/list, create/update events, reminders
+  * **Google Drive** — search/fetch files; attach files to email
+  * *(Optional)* **Maps/Places** — address/phone lookups and shareable map links
+* **Confirmation gates**: Required before **sending** or **creating** anything.
+
+---
+
+## Setup (No-Code or Low-Code)
+
+**1) Create a Vapi Assistant**
+
+* Create a new assistant in Vapi.
+* Paste the **System Prompt** above.
+* Choose your model and voice.
+* Point your number to this assistant.
+
+**2) Connect Composio MCP tools**
+
+* In Composio, enable connectors for **Gmail**, **Google Calendar**, **Google Drive** (and Maps if you plan to use it).
+* For demo, **pre-connect your accounts** so there’s no OAuth friction on stage.
+* In Vapi, attach the **MCP server URL(s)** for those connections to the assistant (per-user MCP URLs if you want multi-tenant demos).
+
+**3) Golden-path scripts**
+
+* Prepare 2–3 short judge utterances (see below).
+* Practice the flows twice; keep a short backup recording just in case.
+
+---
+
+## Golden-Path Demo Scripts
+
+1. **Email triage + reply**
+   “**Read my last email from Anna and reply ‘thanks!’**”
+   → TechTalk summarizes → asks to confirm sending → replies → confirms sent.
+
+2. **Calendar add**
+   “**Add lunch with Sam tomorrow at noon.**”
+   → TechTalk restates absolute date/time → asks to confirm → creates event → offers to text details.
+
+3. **File → Email**
+   “**Find my insurance card PDF and email it to me.**”
+   → TechTalk searches Drive (`name='InsuranceCard'`) → confirms the file → drafts email with attachment → asks to send → confirms sent.
+
+*(Optional)* **Address lookup + share**
+“**What’s Dr. Lee’s address? Text me a map link.**”
+
+---
+
+## Operational Rules & Guardrails
+
+* **One question at a time.**
+* **Always confirm** before sending emails or creating calendar events.
+* **Minimize what you read aloud** (summaries first; offer full read if asked).
+* **Time zones:** Speak and store **absolute** dates/times (e.g., “Wednesday, August 6th at 2:30 PM Pacific”).
+* **Privacy:** Access only what’s relevant; do not store sensitive data without consent.
+
+---
+
+## Tool Call Recipes
+
+> Use **minimal, robust queries** and prefer **latest/most relevant** items when multiple matches exist.
+
+**Google Drive search (critical syntax)**
+
+```json
+{ "q": "name='InsuranceCard'", "pageSize": 5 }
+```
+
+* ✅ Use `name=` (Drive v3).
+* ✅ Single quotes around string literals.
+* ❌ Don’t use `title` (v2) or `mimeType contains`. Prefer exact `mimeType = 'application/pdf'` if filtering type.
+
+**Gmail search (broad, then pick latest)**
+
+* Query examples:
+
+  * subject contains “appointment”
+  * body contains “doctor”
+  * from address + keyword
+* Return a small set, **choose the most recent**, then read a concise summary.
+
+**Calendar create**
+
+* Resolve natural language to **absolute** date/time.
+* Confirm **title, date, time, duration**, then create.
+* Offer to read back or text an event summary.
+
+**Dates & “today”**
+
+* If any logic depends on **today/tomorrow/this week**, ensure you **check the current date/time** (via tool or environment) before constructing ranges.
+
+**Attach a Drive file to Gmail**
+
+1. Search Drive with the **name=** query format.
+2. **Download** the file first.
+3. Attach when drafting/sending the email.
