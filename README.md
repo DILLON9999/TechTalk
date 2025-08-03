@@ -6,26 +6,11 @@ Thank you!
 
 ---
 
-## Table of Contents
-
-* [Overview](#overview)
-* [Architecture](#architecture)
-* [System Prompt (paste into Vapi)](#system-prompt-paste-into-vapi)
-* [Capabilities & Tooling](#capabilities--tooling)
-* [Setup (No-Code or Low-Code)](#setup-no-code-or-low-code)
-* [Golden-Path Demo Scripts](#golden-path-demo-scripts)
-* [Operational Rules & Guardrails](#operational-rules--guardrails)
-* [Tool Call Recipes](#tool-call-recipes)
-* [Troubleshooting](#troubleshooting)
-* [Accessibility & UX Details](#accessibility--ux-details)
-* [Roadmap (Post-Hackathon)](#roadmap-post-hackathon)
-* [Credits](#credits)
-
----
-
 ## Overview
 
-**TechTalk** is a **phone-first assistant** for anyone who struggles with technology (e.g., elderly users). It runs as a **Vapi** voice agent and uses **Composio MCP** tools to act inside the caller’s accounts (Gmail, Google Calendar, Google Drive, and more soon). The assistant **explains what it will do, asks for permission, performs the action, and reads back the result**—all in plain, patient language.
+**TechTalk** is a **phone-first agent** for anyone who struggles with technology (e.g., elderly users). It runs as a **Vapi** voice agent and uses **Composio MCP** tools to act inside the caller’s accounts (Gmail, Google Calendar, Google Drive, and more soon). The assistant **explains what it will do, asks for permission, performs the action, and reads back the result**—all in plain, patient language.
+
+The Vapi agent has complete control over which tools it uses to complete user requests and the workflow through which the tools are called. This allows for an extremely dynamic system that can solve almost any problem given the tools and information necessary are there. And all of this without any need for apps, websites, or UIs. Just your voice!
 
 **Key benefits**
 
